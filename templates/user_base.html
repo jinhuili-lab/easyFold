@@ -1,0 +1,70 @@
+{% extends "base_public.html" %}
+{% block body %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+  <header class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight">AlphaFold3 Mini GUI</h1>
+      <p class="text-sm text-neutral-600 mt-1">{{ subtitle or "" }}</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-sm text-neutral-700">Hi, <span class="font-medium">{{ user.username }}</span></span>
+      <a href="/logout" class="rounded-xl border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50">Logout</a>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <aside class="lg:col-span-2">
+      <div class="card rounded-2xl bg-white border border-neutral-200 p-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-medium">Menu</h2>
+          <button id="toggleMenu" class="text-sm underline text-neutral-600">Hide</button>
+        </div>
+        <div id="menuBody" class="mt-4 space-y-2">
+          <a class="block rounded-xl border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50" href="/home">Home</a>
+          <a class="block rounded-xl border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50" href="/submit">Submit</a>
+          <a class="block rounded-xl border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50" href="/jobs">JobList</a>
+          <a class="block rounded-xl border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50" href="/guide">Guide</a>
+        </div>
+      </div>
+
+      <script>
+        const btn = document.getElementById("toggleMenu");
+        const body = document.getElementById("menuBody");
+        let hidden = false;
+        btn.addEventListener("click", () => {
+          hidden = !hidden;
+          body.style.display = hidden ? "none" : "block";
+          btn.textContent = hidden ? "Show" : "Hide";
+        });
+      </script>
+    </aside>
+
+    <main class="lg:col-span-7">
+      <div class="card rounded-2xl bg-white border border-neutral-200 p-5">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+
+    <aside class="lg:col-span-3">
+      <div class="card rounded-2xl bg-white border border-neutral-200 p-5">
+        <h2 class="text-base font-medium">Right panel</h2>
+        <p class="text-sm text-neutral-600 mt-2">
+          {{ right_help or "Use Submit to create jobs. Results appear only in JobList. Select jobs to download." }}
+        </p>
+        {% if command %}
+          <div class="mt-4">
+            <h3 class="text-sm font-medium mb-2">Generated command</h3>
+            <pre class="text-xs bg-neutral-50 border border-neutral-200 rounded-xl p-3 whitespace-pre-wrap">{{ command }}</pre>
+          </div>
+        {% endif %}
+        {% if payload_preview %}
+          <div class="mt-4">
+            <h3 class="text-sm font-medium mb-2">JSON payload</h3>
+            <pre class="text-xs bg-neutral-50 border border-neutral-200 rounded-xl p-3 whitespace-pre-wrap mono">{{ payload_preview }}</pre>
+          </div>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "user_base.html" %}
+{% set subtitle="How to use the system." %}
+{% block content %}
+<h2 class="text-base font-medium mb-3">Guide</h2>
+<ol class="list-decimal pl-5 text-sm text-neutral-700 space-y-2">
+  <li>Go to <b>Submit</b> and paste a protein sequence.</li>
+  <li>Use <b>Check</b> to generate the AF3 JSON payload and docker command draft.</li>
+  <li>Submit creates a job record with a unique UID. Results appear in <b>JobList</b>.</li>
+</ol>
+{% endblock %}

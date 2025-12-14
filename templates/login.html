@@ -1,0 +1,29 @@
+{% extends "base_public.html" %}
+{% set title="Login • AF3 Mini GUI" %}
+{% block body %}
+<div class="max-w-md mx-auto px-4 py-16">
+  <div class="card rounded-2xl bg-white border border-neutral-200 p-6">
+    <h1 class="text-xl font-semibold tracking-tight">Login</h1>
+    <p class="text-sm text-neutral-600 mt-1">Sign in to access the system.</p>
+    {% if error %}
+    <div class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
+    {% endif %}
+    <form action="/login" method="post" class="mt-5 space-y-4">
+      <div>
+        <label class="text-sm font-medium">Username</label>
+        <input name="username" class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300" />
+      </div>
+      <div>
+        <label class="text-sm font-medium">Password</label>
+        <input type="password" name="password" class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300" />
+      </div>
+      <button class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800" type="submit">
+        Sign in
+      </button>
+    </form>
+    <div class="mt-4 text-sm text-neutral-600">
+      No account? <a class="underline" href="/register">Create one</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

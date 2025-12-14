@@ -1,0 +1,84 @@
+{% extends "user_base.html" %}
+{% set subtitle="All your jobs." %}
+{% block content %}
+<h2 class="text-base font-medium mb-4">JobList</h2>
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+  <form id="dlForm" action="/jobs/download" method="post" class="flex items-center gap-2">
+    <input type="hidden" name="job_ids" id="job_ids" value="" />
+    <button type="button" id="downloadBtn"
+      class="rounded-xl border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50">
+      Download selected (zip)
+    </button>
+  </form>
+
+  <form method="get" class="flex items-center gap-2">
+    <label class="text-sm text-neutral-600">Per page</label>
+    <select name="per_page" class="rounded-xl border border-neutral-200 px-2 py-2 text-sm" onchange="this.form.submit()">
+      {% for opt in [10,20,50] %}
+        <option value="{{opt}}" {% if per_page==opt %}selected{% endif %}>{{opt}}</option>
+      {% endfor %}
+    </select>
+    <input type="hidden" name="page" value="1" />
+  </form>
+</div>
+
+<div class="overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="text-neutral-600">
+      <tr class="border-b">
+        <th class="py-2 text-left w-10"></th>
+        <th class="py-2 text-left">Job</th>
+        <th class="py-2 text-left">UID</th>
+        <th class="py-2 text-left">Status</th>
+        <th class="py-2 text-left">Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr class="border-b hover:bg-neutral-50">
+        <td class="py-2"><input type="checkbox" class="jobchk" value="{{ j.id }}"></td>
+        <td class="py-2"><a class="underline" href="/jobs/{{ j.id }}">{{ j.name }} ({{ j.id }})</a></td>
+        <td class="py-2 mono text-xs">{{ j.job_uid }}</td>
+        <td class="py-2">{{ j.status }}</td>
+        <td class="py-2 text-neutral-600">{{ j.created_at }}</td>
+      </tr>
+      {% endfor %}
+      {% if jobs|length == 0 %}
+      <tr><td class="py-6 text-neutral-600" colspan="5">No jobs.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<div class="flex items-center justify-between mt-4 text-sm">
+  <div class="text-neutral-600">Total: {{ total }}</div>
+  <div class="flex items-center gap-2">
+    {% if page > 1 %}
+      <a class="rounded-xl border border-neutral-200 px-3 py-1 hover:bg-neutral-50" href="/jobs?page={{page-1}}&per_page={{per_page}}">Prev</a>
+    {% else %}
+      <span class="rounded-xl border border-neutral-100 px-3 py-1 text-neutral-400">Prev</span>
+    {% endif %}
+
+    <span class="text-neutral-700">Page {{ page }} / {{ total_pages }}</span>
+
+    {% if page < total_pages %}
+      <a class="rounded-xl border border-neutral-200 px-3 py-1 hover:bg-neutral-50" href="/jobs?page={{page+1}}&per_page={{per_page}}">Next</a>
+    {% else %}
+      <span class="rounded-xl border border-neutral-100 px-3 py-1 text-neutral-400">Next</span>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  const btn = document.getElementById("downloadBtn");
+  const hidden = document.getElementById("job_ids");
+  const form = document.getElementById("dlForm");
+  btn.addEventListener("click", () => {
+    const ids = Array.from(document.querySelectorAll(".jobchk:checked")).map(x => x.value);
+    if (ids.length === 0) { alert("Select at least one job."); return; }
+    hidden.value = ids.join(",");
+    form.submit();
+  });
+</script>
+{% endblock %}

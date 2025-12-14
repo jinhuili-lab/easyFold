@@ -1,0 +1,22 @@
+{% extends "admin_base.html" %}
+{% set subtitle="View a job (admin)." %}
+{% block content %}
+<h2 class="text-base font-medium mb-2">Job {{ job.id }} • {{ job.name }}</h2>
+<p class="text-sm text-neutral-600 mb-1">UID: <span class="mono text-xs">{{ job.job_uid }}</span></p>
+<p class="text-sm text-neutral-600 mb-2">Owner: <b>{{ job.owner.username }}</b></p>
+<p class="text-sm text-neutral-600 mb-4">Status: <b>{{ job.status }}</b></p>
+
+<div class="grid grid-cols-1 gap-4">
+  <div>
+    <h3 class="text-sm font-medium mb-2">Docker command</h3>
+    <pre class="text-xs bg-neutral-50 border border-neutral-200 rounded-xl p-3 whitespace-pre-wrap mono">{{ job.docker_cmd or "N/A" }}</pre>
+  </div>
+  <div>
+    <h3 class="text-sm font-medium mb-2">JSON payload</h3>
+    <pre class="text-xs bg-neutral-50 border border-neutral-200 rounded-xl p-3 whitespace-pre-wrap mono">{{ job.params_json }}</pre>
+  </div>
+  <div class="pt-2">
+    <a href="/admin/jobs" class="text-sm underline">Back to Joblist</a>
+  </div>
+</div>
+{% endblock %}

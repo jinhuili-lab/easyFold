@@ -1,0 +1,585 @@
+{% extends "user_base.html" %}
+{% set subtitle="Result dashboard." %}
+{% block content %}
+<h2 class="text-base font-medium mb-2">Result: {{ job.name }}</h2>
+<p class="text-sm text-neutral-600 mb-4">
+  Status: <b>{{ job.status }}</b>
+  <span class="text-neutral-400">•</span>
+  Submit: {{ job.created_at }}
+  {% if job.finished_at %}<span class="text-neutral-400">•</span> Finish: {{ job.finished_at }}{% endif %}
+</p>
+
+<div class="flex flex-wrap gap-2 mb-3">
+  <button class="tabbtn rounded-xl border border-neutral-200 px-3 py-2 text-sm" data-tab="overview">Overview</button>
+  <button class="tabbtn rounded-xl border border-neutral-200 px-3 py-2 text-sm" data-tab="structure">Structure</button>
+  <button class="tabbtn rounded-xl border border-neutral-200 px-3 py-2 text-sm" data-tab="confidence">Confidence</button>
+  <button class="tabbtn rounded-xl border border-neutral-200 px-3 py-2 text-sm" data-tab="compare">Compare</button>
+  <button class="tabbtn rounded-xl border border-neutral-200 px-3 py-2 text-sm" data-tab="domains">Domains</button>
+  <button class="tabbtn rounded-xl border border-neutral-200 px-3 py-2 text-sm" data-tab="logs">Logs</button>
+</div>
+
+<div id="tab_overview" class="tabpane">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div class="rounded-2xl border border-neutral-200 p-4 bg-white">
+      <div class="text-xs text-neutral-500 mb-1">Job</div>
+      <div class="text-sm font-medium">{{ job.name }}</div>
+      <div class="text-xs text-neutral-500 mt-2">UID</div>
+      <div class="text-xs mono">{{ job.job_uid }}</div>
+    </div>
+
+    <div class="rounded-2xl border border-neutral-200 p-4 bg-white">
+      <div class="text-xs text-neutral-500 mb-1">Times</div>
+      <div class="text-sm">Submit: <span class="mono">{{ job.created_at }}</span></div>
+      <div class="text-sm">Finish: <span class="mono">{{ job.finished_at or "-" }}</span></div>
+    </div>
+
+    <div class="rounded-2xl border border-neutral-200 p-4 bg-white">
+      <div class="text-xs text-neutral-500 mb-1">Artifacts</div>
+      <div class="text-sm"><span id="hasStruct">Structure</span></div>
+      <div class="text-sm"><span id="hasPlddt">pLDDT</span></div>
+      <div class="text-sm"><span id="hasPae">PAE</span></div>
+      <div class="text-sm"><span id="hasContact">Contact map</span></div>
+      <div class="text-sm"><span id="hasDomains">Domains</span></div>
+    </div>
+  </div>
+</div>
+
+<div id="tab_structure" class="tabpane hidden">
+  <div class="rounded-2xl border border-neutral-200 bg-white p-4">
+    <div class="flex items-center justify-between mb-2">
+      <div class="text-sm font-medium">3D structure</div>
+      <div class="text-xs text-neutral-500">Mol*</div>
+    </div>
+    <div id="molstar" style="height:520px;"></div>
+    <div class="mt-3 flex flex-wrap gap-2">
+      <button id="btnReloadStruct" class="rounded-xl border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50">Reload structure</button>
+      <button id="btnLoadDomainPdb" class="rounded-xl border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50">Load domain-colored PDB</button>
+    </div>
+    <p class="text-xs text-neutral-500 mt-2">Domain-colored mode uses B-factors = domain_id*10 (requires Merizo).</p>
+  </div>
+</div>
+
+<div id="tab_confidence" class="tabpane hidden">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div class="rounded-2xl border border-neutral-200 bg-white p-4">
+      <div class="text-sm font-medium mb-2">pLDDT (per residue)</div>
+      <canvas id="plddtChart"></canvas>
+      <p class="text-xs text-neutral-500 mt-2">Extracted from PDB CA B-factor when available.</p>
+    </div>
+
+    <div class="rounded-2xl border border-neutral-200 bg-white p-4">
+      <div class="text-sm font-medium mb-2">PAE</div>
+      <div class="border border-neutral-200 rounded-xl overflow-hidden">
+        <canvas id="paeCanvas" width="520" height="520"></canvas>
+      </div>
+      <p id="paeSel" class="text-xs text-neutral-500 mt-2">(drag to select a region)</p>
+    </div>
+
+    <div class="rounded-2xl border border-neutral-200 bg-white p-4 lg:col-span-2">
+      <div class="text-sm font-medium mb-2">Contact map (CA-CA, cutoff 8Å)</div>
+      <div class="border border-neutral-200 rounded-xl overflow-hidden">
+        <canvas id="contactCanvas" width="520" height="520"></canvas>
+      </div>
+      <p id="contactSel" class="text-xs text-neutral-500 mt-2">(drag to select a region)</p>
+    </div>
+  </div>
+</div>
+
+<div id="tab_compare" class="tabpane hidden">
+  <div class="rounded-2xl border border-neutral-200 bg-white p-4">
+    <div class="text-sm font-medium mb-2">Compare (models / seeds)</div>
+    <p class="text-xs text-neutral-500 mb-3">All PDB models found in the job output, ranked by avg pLDDT.</p>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="rounded-xl border border-neutral-200 p-3">
+        <div class="text-xs text-neutral-500 mb-1">Avg pLDDT per model</div>
+        <canvas id="comparePlddt"></canvas>
+      </div>
+      <div class="rounded-xl border border-neutral-200 p-3">
+        <div class="text-xs text-neutral-500 mb-1">Models</div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" id="modelsTable"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tab_domains" class="tabpane hidden">
+  <div class="rounded-2xl border border-neutral-200 bg-white p-4">
+    <div class="flex items-center justify-between mb-2">
+      <div class="text-sm font-medium">Domains (Merizo, optional)</div>
+      <button id="runMerizo" class="rounded-xl border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50">Run Merizo</button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="rounded-xl border border-neutral-200 p-3">
+        <div class="text-xs text-neutral-500 mb-2">Sequence domains</div>
+        <div id="domainBar" class="h-5 rounded-lg overflow-hidden bg-neutral-100 flex"></div>
+        <div class="text-xs text-neutral-500 mt-2" id="domainLegend">(no domain result yet)</div>
+        <div class="mt-3">
+          <div class="text-xs text-neutral-500 mb-1">Merizo JSON</div>
+          <pre id="domainsJson" class="text-xs bg-neutral-50 border border-neutral-200 rounded-xl p-3 whitespace-pre-wrap mono">(no domain result yet)</pre>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-neutral-200 p-3">
+        <div class="text-xs text-neutral-500 mb-2">Overlay</div>
+        <p class="text-xs text-neutral-500">After domains are available, boundaries are drawn on PAE and Contact maps in the Confidence tab.</p>
+        <div class="mt-2">
+          <button id="colorByDomain" class="rounded-xl border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50">Color structure by domain</button>
+          <p class="text-xs text-neutral-500 mt-2">Best-effort: loads a PDB copy with B-factors set to domain_id*10.</p>
+        </div>
+      </div>
+    </div>
+ 
+
+<div class="mt-4 rounded-xl border border-neutral-200 p-3">
+  <div class="text-xs text-neutral-500 mb-2">Contact density (intra / inter domains)</div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm" id="domainStatsTable"></table>
+  </div>
+  <p class="text-xs text-neutral-500 mt-2">Computed from CA-CA contact map (8Å). Values are densities (observed / possible).</p>
+</div>
+ </div>
+</div>
+
+<div id="tab_logs" class="tabpane hidden">
+  <div class="rounded-2xl border border-neutral-200 bg-white p-4">
+    <div class="text-sm font-medium mb-2">Log</div>
+    <pre id="logBox" class="text-xs bg-neutral-50 border border-neutral-200 rounded-xl p-3 whitespace-pre-wrap mono">(loading...)</pre>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://unpkg.com/molstar/build/viewer/molstar.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/molstar/build/viewer/molstar.css"/>
+
+<script>
+  const jobId = {{ job.id }};
+  let molViewer = null;
+
+let contactCache = { size: null, bin: null };
+let paeCache = { size: null, matrix: null };
+let domainsCache = { ranges: [], length: null };
+
+function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+function pixelToIndex(px, canvasSize, n){
+  return clamp(Math.floor(px / canvasSize * n) + 1, 1, n);
+}
+
+// Best-effort Mol* highlight for residue interval on first structure.
+async function highlightResidues(rangeList){
+  if(!molViewer || !molViewer.plugin) return;
+  try{
+    const plugin = molViewer.plugin;
+    // clear previous selection
+    plugin.managers.structure.selection.clear();
+    // Build selection expression: residues in ranges for chain A (fallback any chain)
+    // MolScript is exposed on global molstar.
+    const MS = molstar.MolScriptBuilder;
+    const ranges = rangeList.filter(r => r && r.start && r.end);
+    if(!ranges.length) return;
+
+    // expression: union of residue ranges
+    const exprs = ranges.map(r => MS.core.rel.eq([MS.struct.atomProperty.macromolecular.auth_asym_id(), 'A']).then
+      ? null : null);
+    // Use a generic "residue-range" query without chain constraint (more robust).
+    const union = MS.struct.generator.atomGroups({
+      'residue-test': MS.core.logic.or(ranges.map(r => MS.core.rel.inRange([MS.struct.atomProperty.macromolecular.auth_seq_id(), r.start, r.end]))),
+      'group-by': MS.struct.atomProperty.macromolecular.residueKey()
+    });
+
+    const sel = plugin.managers.structure.selection.fromExpression(union);
+    if(sel) {
+      plugin.managers.structure.selection.add(sel);
+      plugin.managers.camera.focusSelection();
+    }
+  }catch(e){
+    // silently ignore; Mol* API varies by build
+    console.warn("Mol* highlight failed", e);
+  }
+}
+
+function computeContactStats(){
+  const tbl = document.getElementById("domainStatsTable");
+  const n = contactCache.size;
+  const bin = contactCache.bin;
+  const ranges = domainsCache.ranges;
+  if(!n || !bin || !ranges.length){
+    tbl.innerHTML = '<tr><td class="py-2 text-neutral-500">Run Merizo + ensure contact map is available.</td></tr>';
+    return;
+  }
+  // Build domain blocks as [start,end]
+  const blocks = ranges.map(r => ({id: r.domain_id, s: r.start, e: r.end}));
+  // helper count contacts within rectangle (inclusive), using upper triangle to avoid double counting
+  function countRect(a1,a2,b1,b2){
+    let c=0;
+    for(let i=a1;i<=a2;i++){
+      for(let j=b1;j<=b2;j++){
+        if(j<=i) continue; // upper triangle only
+        const v = bin[(i-1)*n + (j-1)];
+        if(v) c++;
+      }
+    }
+    return c;
+  }
+  function possibleRect(a1,a2,b1,b2){
+    // number of unordered pairs between sets A and B (if same, nC2)
+    const na = a2-a1+1;
+    const nb = b2-b1+1;
+    if(a1==b1 && a2==b2){
+      return (na*(na-1))/2;
+    }
+    return na*nb;
+  }
+
+  let html = '<tr class="border-b text-neutral-600"><th class="py-2 text-left">Pair</th><th class="py-2 text-left">Contacts</th><th class="py-2 text-left">Possible</th><th class="py-2 text-left">Density</th></tr>';
+  for(let i=0;i<blocks.length;i++){
+    for(let j=i;j<blocks.length;j++){
+      const A=blocks[i], B=blocks[j];
+      const cnt = (i==j) ? countRect(A.s,A.e,A.s,A.e) : countRect(A.s,A.e,B.s,B.e);
+      const pos = possibleRect(A.s,A.e,B.s,B.e);
+      const den = pos>0 ? (cnt/pos) : 0;
+      const label = (i==j) ? `D${A.id} intra` : `D${A.id} × D${B.id}`;
+      html += `<tr class="border-b"><td class="py-2">${label}</td><td class="py-2 mono">${cnt}</td><td class="py-2 mono">${Math.round(pos)}</td><td class="py-2 mono">${den.toFixed(4)}</td></tr>`;
+    }
+  }
+  tbl.innerHTML = html;
+}
+
+function overlayFocusBox(canvas, a1,a2,b1,b2,n){
+  if(!n) return;
+  const ctx = canvas.getContext("2d");
+  const s = canvas.width / n;
+  ctx.save();
+  // dim outside
+  ctx.fillStyle = "rgba(0,0,0,0.15)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  // clear focus region
+  ctx.clearRect((a1-1)*s, (b1-1)*s, (a2-a1+1)*s, (b2-b1+1)*s);
+  // border focus
+  ctx.strokeStyle = "rgba(0,0,255,0.8)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect((a1-1)*s, (b1-1)*s, (a2-a1+1)*s, (b2-b1+1)*s);
+  ctx.restore();
+}
+
+function focusDomain(domainId){
+  const r = domainsCache.ranges.find(x => x.domain_id === domainId);
+  if(!r) return;
+  const s=r.start, e=r.end;
+  // overlay on PAE & Contact
+  if(paeCache.size) overlayFocusBox(document.getElementById("paeCanvas"), s,e,s,e, paeCache.size);
+  if(contactCache.size) overlayFocusBox(document.getElementById("contactCanvas"), s,e,s,e, contactCache.size);
+  highlightResidues([{start:s, end:e}]);
+}
+
+
+
+  function showTab(name){
+    document.querySelectorAll(".tabpane").forEach(p => p.classList.add("hidden"));
+    document.getElementById("tab_" + name).classList.remove("hidden");
+  }
+  document.querySelectorAll(".tabbtn").forEach(b => b.addEventListener("click", () => showTab(b.dataset.tab)));
+  showTab("overview");
+
+  async function loadSummary(){
+    try{
+      const r = await fetch(`/api/jobs/${jobId}/results/summary`);
+      const d = await r.json();
+      document.getElementById("hasStruct").textContent = d.structure_path ? "Structure ✅" : "Structure —";
+      document.getElementById("hasPlddt").textContent = d.has_plddt ? "pLDDT ✅" : "pLDDT —";
+      document.getElementById("hasPae").textContent = d.has_pae ? "PAE ✅" : "PAE —";
+      document.getElementById("hasContact").textContent = d.has_contact ? "Contact ✅" : "Contact —";
+      document.getElementById("hasDomains").textContent = "Domains (optional)";
+      return d;
+    }catch(e){ return null; }
+  }
+
+  async function initMolstar(structUrl, format){
+    const target = document.getElementById("molstar");
+    target.innerHTML = "";
+    molViewer = await molstar.Viewer.create('molstar', { layoutIsExpanded: true, layoutShowControls: true });
+    if(structUrl){
+      await molViewer.loadStructureFromUrl(structUrl, format || "mmcif");
+    }
+  }
+
+  async function loadStructureDefault(summary){
+    if(summary && summary.structure_path){
+      const fname = summary.structure_path.split("/").pop();
+      const ext = fname.toLowerCase().endsWith(".pdb") ? "pdb" : "mmcif";
+      await initMolstar(`/jobs/${jobId}/files/${fname}`, ext);
+    }else{
+      await initMolstar(null, null);
+    }
+  }
+
+  async function plotPlddt(){
+    const ctx = document.getElementById("plddtChart");
+    try{
+      const r = await fetch(`/api/jobs/${jobId}/results/plddt`);
+      if(!r.ok) throw new Error("no plddt");
+      const d = await r.json();
+      const xs = d.values.map((_,i)=> i + (d.offset || 1));
+      new Chart(ctx, { type:'line', data:{ labels: xs, datasets:[{ data:d.values }] }, options:{ responsive:true, animation:false, plugins:{legend:{display:false}}, scales:{y:{min:0,max:100}} } });
+    }catch(e){
+      ctx.parentElement.innerHTML += '<p class="text-xs text-neutral-500 mt-2">No pLDDT available yet.</p>';
+    }
+  }
+
+  function drawBinaryMatrix(canvas, size, data){
+    const ctx = canvas.getContext("2d");
+    const img = ctx.createImageData(size, size);
+    for(let i=0;i<size*size;i++){
+      const v = data[i] ? 0 : 255;
+      img.data[i*4+0]=v; img.data[i*4+1]=v; img.data[i*4+2]=v; img.data[i*4+3]=255;
+    }
+    const off = document.createElement("canvas");
+    off.width = size; off.height = size;
+    off.getContext("2d").putImageData(img,0,0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(off,0,0,canvas.width,canvas.height);
+  }
+
+  async function drawContact(){
+    const c = document.getElementById("contactCanvas");
+    const ctx = c.getContext("2d");
+    try{
+      const r = await fetch(`/api/jobs/${jobId}/results/contact`);
+      if(!r.ok) throw new Error("no contact");
+      const d = await r.json();
+      const bin = Uint8Array.from(atob(d.data_b64), ch => ch.charCodeAt(0));
+      contactCache.size = d.size; contactCache.bin = bin;
+      drawBinaryMatrix(c, d.size, bin);
+      return d.size;
+    }catch(e){
+      ctx.clearRect(0,0,c.width,c.height);
+      ctx.fillStyle = "#888";
+      ctx.fillText("No contact map available yet.", 10, 20);
+      return null;
+    }
+  }
+
+  async function drawPae(){
+    const c = document.getElementById("paeCanvas");
+    const ctx = c.getContext("2d");
+    try{
+      const r = await fetch(`/api/jobs/${jobId}/results/pae`);
+      if(!r.ok) throw new Error("no pae");
+      const d = await r.json();
+      let m = d.predicted_aligned_error || d.pae || d;
+      if(!Array.isArray(m) || !Array.isArray(m[0])) throw new Error("bad pae format");
+      const n = m.length;
+      const img = ctx.createImageData(n,n);
+      for(let i=0;i<n;i++){
+        for(let j=0;j<n;j++){
+          const v = m[i][j];
+          const g = Math.max(0, Math.min(255, 255 - Math.round((v/30.0)*255)));
+          const k = (i*n+j)*4;
+          img.data[k]=g; img.data[k+1]=g; img.data[k+2]=g; img.data[k+3]=255;
+        }
+      }
+      const off = document.createElement("canvas");
+      off.width=n; off.height=n;
+      off.getContext("2d").putImageData(img,0,0);
+      ctx.imageSmoothingEnabled=false;
+      ctx.clearRect(0,0,c.width,c.height);
+      ctx.drawImage(off,0,0,c.width,c.height);
+      return n;
+    }catch(e){
+      ctx.clearRect(0,0,c.width,c.height);
+      ctx.fillStyle = "#888";
+      ctx.fillText("No PAE available yet.", 10, 20);
+      return null;
+    }
+  }
+
+  async function loadLog(){
+    try{
+      const r = await fetch(`/api/jobs/${jobId}/log`);
+      const d = await r.json();
+      document.getElementById("logBox").textContent = d.log || "(empty)";
+    }catch(e){
+      document.getElementById("logBox").textContent = "(failed to load log)";
+    }
+  }
+
+  async function loadCompare(){
+    const canvas = document.getElementById("comparePlddt");
+    const table = document.getElementById("modelsTable");
+    try{
+      const r = await fetch(`/api/jobs/${jobId}/results/compare`);
+      if(!r.ok) throw new Error("no compare");
+      const d = await r.json();
+      const models = d.models || [];
+      const labels = models.map(m => m.name);
+      const vals = models.map(m => (m.avg_plddt ?? null));
+      new Chart(canvas, { type:'bar', data:{ labels: labels, datasets:[{ data: vals }] }, options:{ responsive:true, animation:false, plugins:{legend:{display:false}}, scales:{y:{min:0,max:100}} } });
+
+      let html = '<tr class="border-b text-neutral-600"><th class="py-2 text-left">Model</th><th class="py-2 text-left">Avg pLDDT</th><th class="py-2 text-left">Len</th></tr>';
+      for(const m of models){
+        html += `<tr class="border-b"><td class="py-2">${m.name}</td><td class="py-2">${m.avg_plddt===null?'-':m.avg_plddt.toFixed(2)}</td><td class="py-2">${m.length||'-'}</td></tr>`;
+      }
+      table.innerHTML = html;
+    }catch(e){
+      canvas.parentElement.innerHTML += '<p class="text-xs text-neutral-500 mt-2">No compare data yet (generated after finish).</p>';
+      table.innerHTML = '';
+    }
+  }
+
+  function parseRanges(dom){
+    if(!dom || !dom.chains) return [];
+    const chain = Object.keys(dom.chains)[0];
+    const arr = dom.chains[chain] || [];
+    return arr.map(x => ({start: +x.start, end: +x.end, domain_id:+x.domain_id}));
+  }
+
+  function setDomainBar(ranges, length){
+    const bar = document.getElementById("domainBar");
+    const legend = document.getElementById("domainLegend");
+    bar.innerHTML = "";
+    if(!ranges.length || !length){
+      legend.textContent = "(no domain result yet)";
+      return;
+    }
+    const colors = ["#60a5fa","#34d399","#fbbf24","#f87171","#a78bfa","#fb7185","#22c55e","#38bdf8"];
+    let parts = [];
+    for(const r of ranges){
+      const w = Math.max(1, (r.end - r.start + 1) / length * 100);
+      const d = document.createElement("div");
+      d.style.width = w + "%";
+      d.style.background = colors[(r.domain_id-1) % colors.length];
+      d.title = `D${r.domain_id}: ${r.start}-${r.end}`;
+      d.style.cursor='pointer'; d.addEventListener('click', ()=>focusDomain(r.domain_id)); bar.appendChild(d);
+      parts.push(`D${r.domain_id}(${r.start}-${r.end})`);
+    }
+    legend.textContent = parts.join(" | ");
+  }
+
+  function drawBoundaries(canvas, ranges, size){
+    if(!ranges.length || !size) return;
+    const ctx = canvas.getContext("2d");
+    ctx.save();
+    ctx.strokeStyle = "rgba(255,0,0,0.55)";
+    ctx.lineWidth = 1;
+    const scale = canvas.width / size;
+    for(const r of ranges){
+      const x = (r.end) * scale;
+      const y = (r.end) * scale;
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function enableSelection(canvas, labelId){
+    let dragging=false, x0=0,y0=0, last=null;
+    canvas.addEventListener("mousedown", (e)=>{
+      dragging=true;
+      const r = canvas.getBoundingClientRect();
+      x0 = e.clientX - r.left; y0 = e.clientY - r.top;
+      last=null;
+    });
+    canvas.addEventListener("mousemove", (e)=>{
+      if(!dragging) return;
+      const r = canvas.getBoundingClientRect();
+      const x1 = e.clientX - r.left; const y1 = e.clientY - r.top;
+      last = {x: Math.min(x0,x1), y: Math.min(y0,y1), w: Math.abs(x1-x0), h: Math.abs(y1-y0)};
+    });
+    canvas.addEventListener("mouseup", ()=>{
+      dragging=false;
+      if(!last) return;
+      const n = (labelId==='paeSel' ? paeCache.size : contactCache.size);
+if(n){
+  const i1 = pixelToIndex(last.x, canvas.width, n);
+  const i2 = pixelToIndex(last.x+last.w, canvas.width, n);
+  const j1 = pixelToIndex(last.y, canvas.height, n);
+  const j2 = pixelToIndex(last.y+last.h, canvas.height, n);
+  document.getElementById(labelId).textContent = `Selected residues: i=${Math.min(i1,i2)}..${Math.max(i1,i2)}, j=${Math.min(j1,j2)}..${Math.max(j1,j2)} (click Domains tab to compute stats)`;
+  // highlight union range (MVP)
+  highlightResidues([{start: Math.min(i1,i2), end: Math.max(i1,i2)}, {start: Math.min(j1,j2), end: Math.max(j1,j2)}]);
+}else{
+  document.getElementById(labelId).textContent = `Selected box: x=${last.x.toFixed(0)}..${(last.x+last.w).toFixed(0)}, y=${last.y.toFixed(0)}..${(last.y+last.h).toFixed(0)}`;
+}
+    });
+  }
+
+  async function loadDomainsAndOverlay(){
+    const box = document.getElementById("domainsJson");
+    try{
+      const r = await fetch(`/api/jobs/${jobId}/results/domains`);
+      if(!r.ok) throw new Error("no domains");
+      const dom = await r.json();
+      box.textContent = JSON.stringify(dom, null, 2);
+      let len = null;
+      try{
+        const pr = await fetch(`/api/jobs/${jobId}/results/plddt`);
+        if(pr.ok){ const pd = await pr.json(); len = (pd.values||[]).length; }
+      }catch(e){}
+      const ranges = parseRanges(dom);
+      domainsCache.ranges = ranges; domainsCache.length = len;
+      setDomainBar(ranges, len);
+      const paeN = await drawPae();
+      const conN = await drawContact();
+      drawBoundaries(document.getElementById("paeCanvas"), ranges, paeN || len);
+      drawBoundaries(document.getElementById("contactCanvas"), ranges, conN || len);
+      computeContactStats();
+      return dom;
+    }catch(e){
+      box.textContent = "(no domain result yet)";
+      setDomainBar([], null);
+      return null;
+    }
+  }
+
+  document.getElementById("runMerizo").addEventListener("click", async () => {
+    const btn = document.getElementById("runMerizo");
+    btn.disabled = true; btn.textContent = "Running...";
+    try{
+      const r = await fetch(`/api/jobs/${jobId}/actions/merizo`, { method: "POST" });
+      const d = await r.json();
+      btn.textContent = d.status === "already_done" ? "Already done" : "Started";
+      setTimeout(loadDomainsAndOverlay, 6000);
+    }catch(e){
+      btn.textContent = "Merizo not available";
+    }finally{
+      setTimeout(() => { btn.disabled=false; btn.textContent="Run Merizo"; }, 5000);
+    }
+  });
+
+  document.getElementById("colorByDomain").addEventListener("click", async () => {
+    try{
+      const r = await fetch(`/jobs/${jobId}/files/domain_bfactor.pdb`);
+      if(!r.ok){ alert("Domain-colored PDB not ready. Run Merizo first."); return; }
+      await initMolstar(`/jobs/${jobId}/files/domain_bfactor.pdb`, "pdb");
+    }catch(e){
+      alert("Failed to load domain-colored PDB.");
+    }
+  });
+
+  document.getElementById("btnReloadStruct").addEventListener("click", async () => {
+    const s = await loadSummary();
+    await loadStructureDefault(s);
+  });
+  document.getElementById("btnLoadDomainPdb").addEventListener("click", async () => {
+    document.getElementById("colorByDomain").click();
+  });
+
+  (async () => {
+    const summary = await loadSummary();
+    await loadStructureDefault(summary);
+    await plotPlddt();
+    await drawPae();
+    await drawContact();
+    await loadCompare();
+    await loadDomainsAndOverlay();
+    enableSelection(document.getElementById('paeCanvas'),'paeSel');
+    enableSelection(document.getElementById('contactCanvas'),'contactSel');
+    await loadLog();
+  })();
+</script>
+
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "user_base.html" %}
+{% set subtitle="Create a new job." %}
+{% block content %}
+<h2 class="text-base font-medium mb-4">Submit</h2>
+
+{% if error %}
+<div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
+{% endif %}
+
+<form action="/submit" method="post" class="space-y-4">
+  <div>
+    <label class="text-sm font-medium">Job name</label>
+    <input name="job_name" class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" value="{{ form_job_name or '' }}"/>
+  </div>
+
+  <div>
+    <label class="text-sm font-medium">Chain IDs (comma-separated)</label>
+    <input name="chain_ids" class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" placeholder="A,B" value="{{ form_chain_ids or 'A' }}"/>
+  </div>
+
+  <div>
+    <label class="text-sm font-medium">Sequence</label>
+    <textarea name="sequence" rows="10" class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"
+      placeholder="GMRESYANENQF...">{{ form_sequence or '' }}</textarea>
+    <p class="text-xs text-neutral-500 mt-2">Paste raw protein sequence (no FASTA header needed).</p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+    <div>
+      <label class="text-sm font-medium">Model seed</label>
+      <input type="number" name="model_seed" value="{{ form_seed or 1 }}" class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Dialect</label>
+      <select name="dialect" class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm">
+        <option value="alphafold3" {% if form_dialect=='alphafold3' %}selected{% endif %}>alphafold3</option>
+      </select>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Version</label>
+      <input type="number" name="version" value="{{ form_version or 1 }}" class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"/>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3 pt-2">
+    <button class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800" type="submit">
+      Submit job
+    </button>
+
+    <button formaction="/submit/check" formmethod="post"
+      class="rounded-xl border border-neutral-200 px-4 py-2 text-sm font-medium hover:bg-neutral-50" type="submit">
+      Check
+    </button>
+  </div>
+</form>
+{% endblock %}

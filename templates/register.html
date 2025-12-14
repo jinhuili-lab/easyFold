@@ -1,0 +1,30 @@
+{% extends "base_public.html" %}
+{% set title="Register • AF3 Mini GUI" %}
+{% block body %}
+<div class="max-w-md mx-auto px-4 py-16">
+  <div class="card rounded-2xl bg-white border border-neutral-200 p-6">
+    <h1 class="text-xl font-semibold tracking-tight">Register</h1>
+    <p class="text-sm text-neutral-600 mt-1">Create an account (non-admin).</p>
+    {% if error %}
+    <div class="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ error }}</div>
+    {% endif %}
+    <form action="/register" method="post" class="mt-5 space-y-4">
+      <div>
+        <label class="text-sm font-medium">Username</label>
+        <input name="username" class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300" />
+      </div>
+      <div>
+        <label class="text-sm font-medium">Password</label>
+        <input type="password" name="password" class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300" />
+        <p class="mt-2 text-xs text-neutral-500">At least 8 characters. bcrypt uses the first 72 bytes.</p>
+      </div>
+      <button class="w-full rounded-xl bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800" type="submit">
+        Create account
+      </button>
+    </form>
+    <div class="mt-4 text-sm text-neutral-600">
+      Already have an account? <a class="underline" href="/login">Sign in</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

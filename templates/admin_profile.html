@@ -1,0 +1,69 @@
+{% extends "admin_base.html" %}
+{% set subtitle="Configure host paths for docker volumes." %}
+{% set prof = profile %}
+{% block content %}
+<h2 class="text-base font-medium mb-4">Profile</h2>
+
+<form action="/admin/profile" method="post" class="space-y-4 max-w-3xl">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div>
+      <label class="text-sm font-medium">Input dir (host)</label>
+      <input name="input_dir" value="{{ profile.input_dir }}" placeholder="$HOME/jinhui/af3/input"
+        class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Output dir (host)</label>
+      <input name="output_dir" value="{{ profile.output_dir }}" placeholder="$HOME/jinhui/af3/output"
+        class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">Models dir (host)</label>
+      <input name="models_dir" value="{{ profile.models_dir }}" placeholder="$HOME/jinhui/af3/paras"
+        class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"/>
+    </div>
+    <div>
+      <label class="text-sm font-medium">AFDB dir (host)</label>
+      <input name="afdb_dir" value="{{ profile.afdb_dir }}" placeholder="$HOME/jinhui/af3/afdb"
+        class="mt-2 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm"/>
+    </div>
+  </div>
+
+  <div>
+  <label class="text-sm text-neutral-600">Executor</label>
+  <select name="executor_type" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm">
+    <option value="local_docker" {% if prof.executor_type=='local_docker' %}selected{% endif %}>Local Docker (free)</option>
+    <option value="ssh" {% if prof.executor_type=='ssh' %}selected{% endif %}>SSH Remote (PRO)</option>
+    <option value="slurm" {% if prof.executor_type=='slurm' %}selected{% endif %}>Slurm Cluster (PRO)</option>
+  </select>
+  <p class="text-xs text-neutral-500 mt-1">Only Local Docker is active in this version.</p>
+</div>
+
+<div>
+  <label class="text-sm text-neutral-600">Max running jobs</label>
+  <input name="max_running" value="{{ prof.max_running or 1 }}" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+  <p class="text-xs text-neutral-500 mt-1">Pending jobs will queue when running jobs reach this limit.</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+  <div>
+    <label class="text-sm text-neutral-600">SSH Host (PRO)</label>
+    <input name="ssh_host" value="{{ prof.ssh_host or '' }}" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+  </div>
+  <div>
+    <label class="text-sm text-neutral-600">SSH User (PRO)</label>
+    <input name="ssh_user" value="{{ prof.ssh_user or '' }}" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+  </div>
+</div>
+
+<div>
+  <label class="text-sm text-neutral-600">Slurm partition (PRO)</label>
+  <input name="slurm_partition" value="{{ prof.slurm_partition or '' }}" class="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
+</div>
+
+<button class="rounded-xl bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800" type="submit">
+    Save
+  </button>
+
+  <p class="text-xs text-neutral-500">These paths will be used to generate docker volume flags in Submit/Check.</p>
+</form>
+{% endblock %}

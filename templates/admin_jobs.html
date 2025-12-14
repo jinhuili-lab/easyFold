@@ -1,0 +1,106 @@
+{% extends "admin_base.html" %}
+{% set subtitle="All users' jobs. Bulk delete/download. Paginated." %}
+{% block content %}
+<h2 class="text-base font-medium mb-4">Joblist</h2>
+
+<div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+  <div class="flex items-center gap-2">
+    <form id="adminDlForm" action="/admin/jobs/download" method="post">
+      <input type="hidden" name="job_ids" id="admin_job_ids_dl" value="" />
+      <button type="button" id="adminDownloadBtn" class="rounded-xl border border-neutral-200 px-3 py-2 text-sm hover:bg-neutral-50">
+        Download selected (zip)
+      </button>
+    </form>
+
+    <form id="adminDelForm" action="/admin/jobs/delete" method="post" onsubmit="return confirm('Delete selected jobs?');">
+      <input type="hidden" name="job_ids" id="admin_job_ids_del" value="" />
+      <button type="button" id="adminDeleteBtn" class="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 hover:bg-red-100">
+        Delete selected
+      </button>
+    </form>
+  </div>
+
+  <form method="get" class="flex items-center gap-2">
+    <label class="text-sm text-neutral-600">Per page</label>
+    <select name="per_page" class="rounded-xl border border-neutral-200 px-2 py-2 text-sm" onchange="this.form.submit()">
+      {% for opt in [10,20,50] %}
+        <option value="{{opt}}" {% if per_page==opt %}selected{% endif %}>{{opt}}</option>
+      {% endfor %}
+    </select>
+    <input type="hidden" name="page" value="1" />
+  </form>
+</div>
+
+<div class="overflow-x-auto">
+  <table class="w-full text-sm">
+    <thead class="text-neutral-600">
+      <tr class="border-b">
+        <th class="py-2 text-left w-10"></th>
+        <th class="py-2 text-left">Job</th>
+        <th class="py-2 text-left">UID</th>
+        <th class="py-2 text-left">User</th>
+        <th class="py-2 text-left">Status</th>
+        <th class="py-2 text-left">Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for j in jobs %}
+      <tr class="border-b hover:bg-neutral-50">
+        <td class="py-2"><input type="checkbox" class="jobchk" value="{{ j.id }}"></td>
+        <td class="py-2"><a class="underline" href="/admin/jobs/{{ j.id }}">{{ j.name }} ({{ j.id }})</a></td>
+        <td class="py-2 mono text-xs">{{ j.job_uid }}</td>
+        <td class="py-2">{{ j.owner.username }}</td>
+        <td class="py-2">{{ j.status }}</td>
+        <td class="py-2 text-neutral-600">{{ j.created_at }}</td>
+      </tr>
+      {% endfor %}
+      {% if jobs|length == 0 %}
+      <tr><td class="py-6 text-neutral-600" colspan="6">No jobs.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<div class="flex items-center justify-between mt-4 text-sm">
+  <div class="text-neutral-600">Total: {{ total }}</div>
+  <div class="flex items-center gap-2">
+    {% if page > 1 %}
+      <a class="rounded-xl border border-neutral-200 px-3 py-1 hover:bg-neutral-50" href="/admin/jobs?page={{page-1}}&per_page={{per_page}}">Prev</a>
+    {% else %}
+      <span class="rounded-xl border border-neutral-100 px-3 py-1 text-neutral-400">Prev</span>
+    {% endif %}
+
+    <span class="text-neutral-700">Page {{ page }} / {{ total_pages }}</span>
+
+    {% if page < total_pages %}
+      <a class="rounded-xl border border-neutral-200 px-3 py-1 hover:bg-neutral-50" href="/admin/jobs?page={{page+1}}&per_page={{per_page}}">Next</a>
+    {% else %}
+      <span class="rounded-xl border border-neutral-100 px-3 py-1 text-neutral-400">Next</span>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  function selectedIds(){ return Array.from(document.querySelectorAll(".jobchk:checked")).map(x => x.value); }
+  const dlBtn = document.getElementById("adminDownloadBtn");
+  const delBtn = document.getElementById("adminDeleteBtn");
+  const dlHidden = document.getElementById("admin_job_ids_dl");
+  const delHidden = document.getElementById("admin_job_ids_del");
+  const dlForm = document.getElementById("adminDlForm");
+  const delForm = document.getElementById("adminDelForm");
+
+  dlBtn.addEventListener("click", () => {
+    const ids = selectedIds();
+    if(ids.length===0){ alert("Select at least one job."); return; }
+    dlHidden.value = ids.join(",");
+    dlForm.submit();
+  });
+
+  delBtn.addEventListener("click", () => {
+    const ids = selectedIds();
+    if(ids.length===0){ alert("Select at least one job."); return; }
+    delHidden.value = ids.join(",");
+    delForm.submit();
+  });
+</script>
+{% endblock %}

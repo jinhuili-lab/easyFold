@@ -1,0 +1,95 @@
+{% extends "admin_base.html" %}
+{% set subtitle="Server usage (live)." %}
+{% block content %}
+<h2 class="text-base font-medium mb-2">Home</h2>
+<p class="text-sm text-neutral-600">Live server metrics and job counts.</p>
+<div class="mt-5">
+  <h3 class="text-sm font-medium mb-2">Home dashboard</h3>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div class="rounded-2xl border border-neutral-200 p-4 bg-white">
+      <div class="flex items-center justify-between">
+        <h4 class="text-xs font-medium text-neutral-600">CPU %</h4>
+        <span id="cpuNow" class="text-xs text-neutral-500">--</span>
+      </div>
+      <canvas id="cpuChart"></canvas>
+    </div>
+
+    <div class="rounded-2xl border border-neutral-200 p-4 bg-white">
+      <div class="flex items-center justify-between">
+        <h4 class="text-xs font-medium text-neutral-600">GPU %</h4>
+        <span id="gpuNow" class="text-xs text-neutral-500">--</span>
+      </div>
+      <canvas id="gpuChart"></canvas>
+    </div>
+
+    <div class="rounded-2xl border border-neutral-200 p-4 bg-white">
+      <div class="flex items-center justify-between">
+        <h4 class="text-xs font-medium text-neutral-600">Mem %</h4>
+        <span id="memNow" class="text-xs text-neutral-500">--</span>
+      </div>
+      <canvas id="memChart"></canvas>
+    </div>
+
+    <div class="rounded-2xl border border-neutral-200 p-4 bg-white">
+      <div class="flex items-center justify-between">
+        <h4 class="text-xs font-medium text-neutral-600">Jobs (last 7 days)</h4>
+        <span id="jobScope" class="text-xs text-neutral-500">--</span>
+      </div>
+      <canvas id="jobsChart"></canvas>
+      <p class="text-xs text-neutral-500 mt-2">Completed vs pending jobs per day.</p>
+    </div>
+  </div>
+
+  <p class="text-xs text-neutral-500 mt-3">Performance refreshes every 5 seconds and keeps only the last 5 minutes.</p>
+</div>
+
+<script>
+  function mkLine(id){
+    const ctx = document.getElementById(id);
+    return new Chart(ctx, {
+      type: 'line',
+      data: { labels: [], datasets: [{ label: id, data: [] }] },
+      options: { responsive:true, animation:false, plugins:{legend:{display:false}}, scales:{x:{display:true}, y:{display:true, min:0, max:100}} }
+    });
+  }
+
+  const cpuC = mkLine("cpuChart");
+  const gpuC = mkLine("gpuChart");
+  const memC = mkLine("memChart");
+
+  const jobsC = new Chart(document.getElementById("jobsChart"), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ label:"Completed", data: [] }, { label:"Pending", data: [] }] },
+    options: { responsive:true, animation:false, scales:{y:{beginAtZero:true}} }
+  });
+
+  async function refreshPerf(){
+    const r = await fetch("/api/metrics");
+    if(!r.ok) return;
+    const d = await r.json();
+    document.getElementById("cpuNow").textContent = (d.cpu_now ?? "--") + "%";
+    document.getElementById("gpuNow").textContent = (d.gpu_now ?? "--") + "%";
+    document.getElementById("memNow").textContent = (d.mem_now ?? "--") + "%";
+    cpuC.data.labels = d.labels; cpuC.data.datasets[0].data = d.cpu; cpuC.update();
+    gpuC.data.labels = d.labels; gpuC.data.datasets[0].data = d.gpu; gpuC.update();
+    memC.data.labels = d.labels; memC.data.datasets[0].data = d.mem; memC.update();
+  }
+
+  async function refreshJobs(scope){
+    const r = await fetch("/api/job_counts?scope=" + encodeURIComponent(scope));
+    if(!r.ok) return;
+    const d = await r.json();
+    document.getElementById("jobScope").textContent = (d.scope === "all") ? "all users" : "me";
+    jobsC.data.labels = d.labels;
+    jobsC.data.datasets[0].data = d.completed;
+    jobsC.data.datasets[1].data = d.pending;
+    jobsC.update();
+  }
+
+  refreshPerf(); refreshJobs("{{ jobs_scope }}");
+  setInterval(refreshPerf, 5000);
+  setInterval(() => refreshJobs("{{ jobs_scope }}"), 5000);
+</script>
+
+{% endblock %}
