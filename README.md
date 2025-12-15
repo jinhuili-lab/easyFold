@@ -79,28 +79,26 @@ This makes easyFold suitable for:
 ```bash
 git clone https://github.com/your-org/easyFold.git
 cd easyFold
-2. Create virtual environment
-bash
-Copy code
+```
+### 2. Create virtual environment
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-3. Configure Docker
-Docker installed and running
-
-AlphaFold3 image available (e.g. cford38/alphafold3)
-
-GPU support recommended (--gpus all)
-
-4. Start server
-bash
-Copy code
+```
+### 3. Configure Docker
+1. Docker installed and running
+2. AlphaFold3 image available (e.g. cford38/alphafold3)
+3. GPU support recommended (--gpus all)
+### 4. Start server
+```
 python -m uvicorn app:app --reload
+```
 Then open:
 👉 http://127.0.0.1:8000
 
-👤 User Roles
-Regular User
+## 👤 User Roles
+### Regular User
 Submit AlphaFold3 jobs
 
 Check jobs before submission
@@ -120,7 +118,7 @@ Stop or delete jobs
 
 Configure execution limits (single-node mode)
 
-📊 Result Dashboard
+## 📊 Result Dashboard
 Each job provides a multi-tab dashboard:
 
 Overview: job metadata and artifacts
@@ -135,7 +133,7 @@ Compare: multi-model / seed comparison
 
 Logs: real-time execution logs
 
-🧪 Domain & Contact Metrics
+## 🧪 Domain & Contact Metrics
 easyFold automatically computes:
 
 Intra-domain contact density
@@ -152,7 +150,7 @@ Structural coupling analysis
 
 Domain-level functional hypotheses
 
-🚀 Roadmap
+## 🚀 Roadmap
 Planned or optional extensions:
 
 Stable Mol* residue selection API integration
@@ -165,13 +163,13 @@ Remote / cluster execution (PRO mode)
 
 Public web-server deployment
 
-📖 Citation
+## 📖 Citation
 If you use easyFold in your research, please cite:
 
 Li, J. et al.
 easyFold: an interactive platform for structure-aware domain interpretation of AlphaFold predictions.
 Manuscript in preparation.
 
-📬 Contact
+## 📬 Contact
 Maintained by: Jinhui Li
 For issues, suggestions, or collaboration, please open an issue or contact the author.
