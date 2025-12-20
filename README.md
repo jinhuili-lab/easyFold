@@ -40,7 +40,8 @@ It integrates confidence metrics (pLDDT, PAE), contact maps, and automated domai
 
 
 ## 📦 Installation
-
+> requirement first
+Python3.10+
 ### 1. Clone repository
 ```bash
 git clone https://github.com/your-org/easyFold.git
