@@ -3,9 +3,7 @@
 **easyFold** is an interactive, structure-aware platform for **AlphaFold3 job management, visualization, and domain-level interpretation**.  
 It integrates confidence metrics (pLDDT, PAE), contact maps, and automated domain segmentation to enable **deep, interpretable analysis of predicted protein structures**.
 
-
 <img src="https://raw.githubusercontent.com/jinhuili-lab/personal_image_bed/master/forMD/202512141825186.png" width="200">
-## ✨ Key Features
 
 ### 🔹 AlphaFold3 Job Management
 - Docker-based AlphaFold3 execution
@@ -39,23 +37,7 @@ It integrates confidence metrics (pLDDT, PAE), contact maps, and automated domai
 
 ---
 
-## 🧠 Design Philosophy
 
-easyFold is **not** just a wrapper for AlphaFold.
-
-It is designed to support:
-- Domain-level reasoning
-- Structure-aware interpretation
-- Confidence-guided analysis
-- Exploration of inter-domain coupling and organization
-
-This makes easyFold suitable for:
-- Multi-domain proteins
-- Large bacterial proteins
-- Toxin systems
-- Structure-based functional annotation studies
-
----
 
 ## 📦 Installation
 
@@ -91,7 +73,23 @@ View and download results
 
 Explore structure, confidence, contact maps, and domains
 
-Administrator
+## 🧠 Design Philosophy
+
+easyFold is **not** just a wrapper for AlphaFold.
+
+It is designed to support:
+- Domain-level reasoning
+- Structure-aware interpretation
+- Confidence-guided analysis
+- Exploration of inter-domain coupling and organization
+
+This makes easyFold suitable for:
+- Multi-domain proteins
+- Large bacterial proteins
+- Toxin systems
+- Structure-based functional annotation studies
+
+--- 
 Configure host paths (input/output/models/AFDB)
 
 Monitor CPU / GPU / memory usage
@@ -134,18 +132,7 @@ Structural coupling analysis
 
 Domain-level functional hypotheses
 
-## 🚀 Roadmap
-Planned or optional extensions:
 
-Stable Mol* residue selection API integration
-
-RMSD-based model comparison
-
-Batch export of publication-ready figures
-
-Remote / cluster execution (PRO mode)
-
-Public web-server deployment
 
 ## 📖 Citation
 If you use easyFold in your research, please cite:
