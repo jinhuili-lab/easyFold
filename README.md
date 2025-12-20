@@ -58,22 +58,6 @@ This makes easyFold suitable for:
 
 ---
 
-## 🏗 Architecture Overview
-
-- **Backend**: FastAPI + SQLAlchemy + SQLite
-- **Frontend**: Jinja2 templates + Tailwind-style layout
-- **Visualization**:
-  - Mol\* (3D structure)
-  - Chart.js (pLDDT, comparisons)
-  - Canvas-based heatmaps (PAE, contact maps)
-- **Execution**:
-  - Docker-based AlphaFold3
-  - Configurable host paths via admin profile
-- **Domain segmentation**:
-  - Merizo (optional, on-demand)
-
----
-
 ## 📦 Installation
 
 ### 1. Clone repository
@@ -85,7 +69,7 @@ cd easyFold
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 ### 3. Configure Docker
 1. Docker installed and running
@@ -93,7 +77,7 @@ pip install -r requirements.txt
 3. GPU support recommended (--gpus all)
 ### 4. Start server
 ```
-python -m uvicorn app:app --reload
+python3 -m uvicorn app:app --reload
 ```
 Then open:
 👉 http://127.0.0.1:8000
