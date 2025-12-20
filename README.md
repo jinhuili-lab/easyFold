@@ -3,9 +3,8 @@
 **easyFold** is an interactive, structure-aware platform for **AlphaFold3 job management, visualization, and domain-level interpretation**.  
 It integrates confidence metrics (pLDDT, PAE), contact maps, and automated domain segmentation to enable **deep, interpretable analysis of predicted protein structures**.
 
-![img](https://raw.githubusercontent.com/jinhuili-lab/personal_image_bed/master/forMD/202512141825186.png)
 
-
+<img src="https://raw.githubusercontent.com/jinhuili-lab/personal_image_bed/master/forMD/202512141825186.png" width="200">
 ## ✨ Key Features
 
 ### 🔹 AlphaFold3 Job Management
